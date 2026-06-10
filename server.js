@@ -24,6 +24,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+app.set('trust proxy', 1);
 // 3. Rate Limiter: Protects against DDoS and contact form spam
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
