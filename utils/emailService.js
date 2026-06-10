@@ -4,15 +4,13 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // 1. Create the Transporter
+// 1. Create the Transporter using the built-in Gmail service
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 465,
-  secure: true, 
+  service: "gmail",
   auth: {
     user: process.env.SMTP_USER, 
     pass: process.env.SMTP_PASS, 
-  },
-  family: 4 
+  }
 });
 
 // 2. Verify connection on startup
