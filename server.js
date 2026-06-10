@@ -27,7 +27,7 @@ app.use(cors(corsOptions));
 // 3. Rate Limiter: Protects against DDoS and contact form spam
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per 15 mins
+    max: 150, // Limit each IP to 100 requests per 15 mins
     message: { status: "error", message: "Too many requests from this IP, please try again later." },
     standardHeaders: true, 
     legacyHeaders: false, 

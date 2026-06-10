@@ -1,4 +1,5 @@
 import db from '../config/db.js';
+import { sendEmail } from '../utils/emailService.js';
 
 export const getCertifications = async (req, res, next) => {
     try {
@@ -75,37 +76,56 @@ export const getSkills = async (req, res, next) => {
     }
 };
 
-export const submitContact = async (req, res, next) => {
+export const submitContact = async (req, res) => {
+    const { name, email, message } = req.body;
+
     try {
-        const { name, email, message } = req.body;
-
-        if (!name || !email || !message) {
-            return res.status(400).json({ status: "error", message: "All fields are required." });
-        }
-
-        // --- NEW: Validate Email Format ---
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ status: "error", message: "Please provide a valid email address." });
-        }
-
-        // Basic string sanitization
-        const cleanName = name.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        const cleanEmail = email.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        const cleanMessage = message.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
+        // 1. Save the message to your TiDB database (We DO want to wait for this)
         const [result] = await db.query(
-            'INSERT INTO contact_messages (name, email, message) VALUES (?, ?, ?)',
-            [cleanName, cleanEmail, cleanMessage]
+            "INSERT INTO contact_messages (name, email, message) VALUES (?, ?, ?)",
+            [name, email, message]
         );
 
-        if (result.affectedRows > 0) {
-            res.status(201).json({ status: "success", message: "Message sent successfully!" });
-        } else {
-            // Throwing an error here triggers the catch block and goes to the global handler
-            throw new Error("Failed to save message to the database.");
-        }
+        // 2. INSTANT SUCCESS RESPONSE! 
+        // We tell the frontend "Success" right now, before the emails even start sending.
+        res.status(200).json({ success: true, message: "Message sent successfully!" });
+
+        // 3. The Polite Auto-Reply to the Visitor (Notice: NO 'await' here)
+        const userHtml = `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <h2>Hello ${name},</h2>
+                <p>Thank you for reaching out! I have received your message and will get back to you as soon as possible.</p>
+                <br>
+                <p>Best Regards,</p>
+                <p><strong>Bijay Kumar Behera</strong><br>Full Stack Developer</p>
+                <a href="https://bijay-portfolio-rho.vercel.app">View My Portfolio</a>
+            </div>
+        `;
+        sendEmail({
+            to: email, 
+            subject: "Thank you for getting in touch!",
+            html: userHtml
+        }).catch(err => console.error("Visitor email failed to send in background:", err));
+
+        // 4. The Notification to YOU (Notice: NO 'await' here)
+        const adminHtml = `
+            <h2>New Portfolio Contact!</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Message:</strong></p>
+            <blockquote style="background: #f9f9f9; padding: 10px; border-left: 4px solid #ccc;">${message}</blockquote>
+        `;
+        sendEmail({
+            to: process.env.SMTP_USER, 
+            subject: `New Message from ${name}`,
+            html: adminHtml
+        }).catch(err => console.error("Admin notification email failed to send in background:", err));
+
     } catch (error) {
-        next(error);
+        console.error(error);
+        // Only send the error response if we haven't already sent the success response
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, message: "Internal Server Error" });
+        }
     }
 };
