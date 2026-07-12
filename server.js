@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import helmet from 'helmet'; 
 import rateLimit from 'express-rate-limit'; 
 import portfolioRoutes from './routes/portfolioRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 dotenv.config();
 
@@ -19,7 +20,7 @@ app.use(helmet());
 // 2. Strict CORS: Only allow your frontend to talk to this backend
 const corsOptions = {
     origin: process.env.FRONTEND_URL || ['http://localhost:5173', 'http://localhost:3000'],
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Added PUT and DELETE
     credentials: true,
 };
 app.use(cors(corsOptions));
@@ -50,6 +51,7 @@ app.get('/health', (req, res) => {
 
 // 2. API Routes
 app.use('/api', portfolioRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 3. Catch-all 404 Handler for unknown routes
 app.use((req, res) => {
