@@ -13,7 +13,7 @@ export const getCertifications = async (req, res, next) => {
 
 export const getExperiences = async (req, res, next) => {
     try {
-        let [experience] = await db.query('SELECT * FROM experience ORDER BY id ASC');
+        let [experience] = await db.query('SELECT * FROM experience ORDER BY id DESC');
 
         if (experience.length === 0) {
             experience = [
