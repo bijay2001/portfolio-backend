@@ -60,7 +60,7 @@ export const getProfile = async (req, res, next) => {
 
 export const getProjects = async (req, res, next) => {
     try {
-        const [rows] = await db.query('SELECT * FROM projects');
+        const [rows] = await db.query('SELECT * FROM projects ORDER BY id DESC');
         res.status(200).json({ status: "success", data: rows });
     } catch (error) {
         next(error);
